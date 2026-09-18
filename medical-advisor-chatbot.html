@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MediAssist AI — Your Personal Health Companion</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0a0f1e;
+  --bg2: #111827;
+  --bg3: #1a2236;
+  --panel: #141c2e;
+  --card: #1e2a42;
+  --border: rgba(99,179,237,0.12);
+  --accent: #38bdf8;
+  --accent2: #818cf8;
+  --accent3: #34d399;
+  --warn: #fb923c;
+  --danger: #f87171;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --faint: #475569;
+  --white: #f8fafc;
+  --font-head: 'DM Serif Display', serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow:hidden;position:relative}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(56,189,248,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.blob{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+.blob1{width:400px;height:400px;background:rgba(56,189,248,0.07);top:-100px;right:100px}
+.blob2{width:300px;height:300px;background:rgba(129,140,248,0.06);bottom:100px;left:50px}
+
+/* SIDEBAR */
+.sidebar{width:272px;min-width:272px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:10;position:relative}
+.logo{padding:24px 20px 18px;border-bottom:1px solid var(--border)}
+.logo-mark{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo h1{font-family:var(--font-head);font-size:19px;color:var(--white);line-height:1}
+.logo p{font-size:11px;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase;margin-top:2px}
+.modes{padding:14px 10px;flex:1;overflow-y:auto}
+.modes h2{font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:0.12em;padding:0 8px;margin-bottom:8px}
+.mode-btn{width:100%;display:flex;align-items:flex-start;gap:10px;padding:11px 10px;border-radius:10px;border:none;background:transparent;cursor:pointer;color:var(--muted);text-align:left;transition:all 0.2s;margin-bottom:4px;border:1px solid transparent}
+.mode-btn:hover{background:rgba(56,189,248,0.06);color:var(--text)}
+.mode-btn.active{background:rgba(56,189,248,0.1);color:var(--white);border-color:rgba(56,189,248,0.2)}
+.mode-icon{width:32px;height:32px;min-width:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--bg3)}
+.mode-btn.active .mode-icon{background:rgba(56,189,248,0.15)}
+.mode-info{flex:1}
+.mode-name{font-size:12px;font-weight:600;line-height:1.2;margin-bottom:2px}
+.mode-desc{font-size:10px;color:var(--faint);line-height:1.4}
+.mode-btn.active .mode-desc{color:var(--muted)}
+.quick-actions{padding:10px;border-top:1px solid var(--border)}
+.quick-actions h2{font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:0.12em;padding:0 6px;margin-bottom:7px}
+.quick-btn{width:100%;padding:7px 10px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--font-body);font-size:11px;text-align:left;cursor:pointer;transition:all 0.2s;margin-bottom:4px}
+.quick-btn:hover{background:var(--bg3);color:var(--text);border-color:rgba(56,189,248,0.2)}
+.disclaimer{padding:10px 14px;border-top:1px solid var(--border);font-size:10px;color:var(--faint);line-height:1.5}
+.disclaimer strong{color:var(--warn)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;z-index:10;position:relative}
+.topbar{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(10,15,30,0.6);backdrop-filter:blur(12px)}
+.topbar-dot{width:8px;height:8px;border-radius:50%;background:var(--accent3);box-shadow:0 0 8px var(--accent3);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.topbar-mode{display:flex;align-items:center;gap:10px}
+.topbar-title{font-size:14px;font-weight:600;color:var(--white)}
+.topbar-sub{font-size:11px;color:var(--muted)}
+.stats{display:flex;gap:10px}
+.stat-pill{padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;color:var(--muted);background:var(--bg3)}
+.stat-pill span{color:var(--accent);font-weight:600}
+
+/* CHAT */
+.chat-area{flex:1;overflow-y:auto;padding:24px 24px 8px;display:flex;flex-direction:column;gap:18px;scroll-behavior:smooth}
+.chat-area::-webkit-scrollbar{width:4px}
+.chat-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.welcome{text-align:center;padding:36px 16px;animation:fadeUp 0.6s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.welcome h2{font-family:var(--font-head);font-size:30px;color:var(--white);margin-bottom:8px}
+.welcome h2 em{font-style:italic;color:var(--accent)}
+.welcome p{color:var(--muted);font-size:13px;max-width:460px;margin:0 auto 24px;line-height:1.6}
+.welcome-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:500px;margin:0 auto}
+.welcome-card{padding:12px 14px;border-radius:11px;border:1px solid var(--border);background:var(--card);text-align:left;cursor:pointer;transition:all 0.2s}
+.welcome-card:hover{border-color:rgba(56,189,248,0.3);background:var(--bg3);transform:translateY(-2px)}
+.welcome-card .wc-icon{font-size:18px;margin-bottom:6px}
+.welcome-card .wc-title{font-size:11px;font-weight:600;color:var(--text);margin-bottom:3px}
+.welcome-card .wc-desc{font-size:10px;color:var(--muted);line-height:1.4}
+.message{display:flex;gap:10px;animation:fadeUp 0.3s ease;max-width:760px}
+.message.user{flex-direction:row-reverse;align-self:flex-end}
+.msg-avatar{width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.message.ai .msg-avatar{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:12px}
+.message.user .msg-avatar{background:var(--card);border:1px solid var(--border)}
+.msg-body{flex:1;min-width:0}
+.msg-meta{display:flex;align-items:center;gap:7px;margin-bottom:4px}
+.message.user .msg-meta{flex-direction:row-reverse}
+.msg-name{font-size:11px;font-weight:600;color:var(--muted)}
+.msg-mode-tag{font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(56,189,248,0.1);color:var(--accent);border:1px solid rgba(56,189,248,0.2)}
+.msg-bubble{padding:12px 14px;border-radius:13px;font-size:13px;line-height:1.7;max-width:100%}
+.message.ai .msg-bubble{background:var(--card);border:1px solid var(--border);border-top-left-radius:4px;color:var(--text)}
+.message.user .msg-bubble{background:linear-gradient(135deg,rgba(56,189,248,0.15),rgba(129,140,248,0.12));border:1px solid rgba(56,189,248,0.2);border-top-right-radius:4px;color:var(--white)}
+.msg-bubble h3{font-size:12px;font-weight:600;color:var(--accent);margin:10px 0 5px}
+.msg-bubble h3:first-child{margin-top:0}
+.msg-bubble ul,.msg-bubble ol{padding-left:16px;margin:5px 0}
+.msg-bubble li{margin-bottom:3px;color:var(--text)}
+.msg-bubble strong{color:var(--white);font-weight:600}
+.msg-bubble em{color:var(--accent3);font-style:normal}
+.msg-bubble hr{border:none;border-top:1px solid var(--border);margin:8px 0}
+.msg-bubble .warn-box{background:rgba(251,146,60,0.08);border:1px solid rgba(251,146,60,0.2);border-radius:7px;padding:8px 11px;margin-top:8px;font-size:11px;color:var(--warn)}
+.msg-bubble .tip-box{background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:7px;padding:8px 11px;margin-top:8px;font-size:11px;color:var(--accent3)}
+.msg-bubble .info-box{background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.15);border-radius:7px;padding:8px 11px;margin:6px 0;font-size:11px;color:var(--accent)}
+.mood-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.mood-btn{padding:5px 12px;border-radius:18px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:12px;font-family:var(--font-body);transition:all 0.2s}
+.mood-btn:hover{border-color:var(--accent);color:var(--accent)}
+.typing-indicator{display:flex;gap:4px;align-items:center;padding:6px 0}
+.typing-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:bounce 1.2s infinite}
+.typing-dot:nth-child(2){animation-delay:0.2s}
+.typing-dot:nth-child(3){animation-delay:0.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* HEALTH PANEL */
+.health-panel{width:248px;min-width:248px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;z-index:10;overflow-y:auto}
+.health-panel::-webkit-scrollbar{width:3px}
+.health-panel::-webkit-scrollbar-thumb{background:var(--border)}
+.hp-section{padding:16px 14px;border-bottom:1px solid var(--border)}
+.hp-section h3{font-size:9px;text-transform:uppercase;letter-spacing:0.12em;color:var(--faint);margin-bottom:10px}
+.mood-tracker-display{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.mood-score{font-family:var(--font-head);font-size:32px;color:var(--accent3);line-height:1}
+.mood-label{font-size:11px;color:var(--muted)}
+.mood-history{display:flex;gap:3px;align-items:flex-end;height:28px}
+.mood-bar{flex:1;background:rgba(56,189,248,0.2);border-radius:2px;transition:height 0.5s}
+.med-list{display:flex;flex-direction:column;gap:7px}
+.med-item{display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--bg3);border-radius:7px;border:1px solid var(--border)}
+.med-dot{width:7px;height:7px;border-radius:50%;min-width:7px}
+.med-info{flex:1}
+.med-name{font-size:11px;font-weight:600;color:var(--text)}
+.med-time{font-size:10px;color:var(--muted)}
+.med-status{font-size:10px;padding:2px 6px;border-radius:7px}
+.med-status.due{background:rgba(251,146,60,0.15);color:var(--warn)}
+.med-status.done{background:rgba(52,211,153,0.1);color:var(--accent3)}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.metric-card{background:var(--bg3);border-radius:7px;border:1px solid var(--border);padding:9px;text-align:center}
+.metric-val{font-family:var(--font-head);font-size:18px;color:var(--white);line-height:1}
+.metric-unit{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em}
+.metric-name{font-size:9px;color:var(--faint);margin-top:2px}
+.appt-list{display:flex;flex-direction:column;gap:7px}
+.appt-item{padding:7px 9px;background:var(--bg3);border-radius:7px;border-left:3px solid var(--accent2)}
+.appt-title{font-size:11px;font-weight:600;color:var(--text)}
+.appt-time{font-size:10px;color:var(--muted);margin-top:2px}
+.add-btn{width:100%;padding:7px;border-radius:7px;border:1px dashed var(--border);background:transparent;color:var(--faint);font-family:var(--font-body);font-size:11px;cursor:pointer;transition:all 0.2s;margin-top:7px}
+.add-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(56,189,248,0.04)}
+
+/* INPUT */
+.input-area{padding:14px 24px 18px;border-top:1px solid var(--border);background:rgba(10,15,30,0.7);backdrop-filter:blur(12px)}
+.upload-zone{display:none;border:1px dashed rgba(56,189,248,0.3);border-radius:9px;padding:10px 14px;margin-bottom:8px;background:rgba(56,189,248,0.04);align-items:center;gap:9px;cursor:pointer;transition:all 0.2s}
+.upload-zone:hover{border-color:var(--accent);background:rgba(56,189,248,0.08)}
+.upload-zone.visible{display:flex}
+.upload-zone span{font-size:11px;color:var(--muted)}
+.upload-zone strong{color:var(--accent);font-size:11px}
+.input-row{display:flex;gap:9px;align-items:flex-end}
+.input-wrapper{flex:1;position:relative;background:var(--card);border:1px solid var(--border);border-radius:11px;transition:border-color 0.2s}
+.input-wrapper:focus-within{border-color:rgba(56,189,248,0.4)}
+.input-tools{display:flex;gap:1px;padding:5px 7px 0}
+.tool-btn{padding:4px 8px;border-radius:6px;border:none;background:transparent;color:var(--faint);cursor:pointer;font-size:11px;transition:all 0.2s;font-family:var(--font-body)}
+.tool-btn:hover{background:var(--bg3);color:var(--text)}
+textarea{width:100%;background:transparent;border:none;padding:7px 12px 11px;color:var(--text);font-family:var(--font-body);font-size:13px;line-height:1.5;resize:none;outline:none;min-height:42px;max-height:140px}
+textarea::placeholder{color:var(--faint)}
+.send-btn{width:42px;height:42px;border-radius:11px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;transition:all 0.2s;flex-shrink:0}
+.send-btn:hover{transform:scale(1.05);box-shadow:0 4px 18px rgba(56,189,248,0.3)}
+.send-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+.input-hints{display:flex;gap:7px;margin-top:7px;flex-wrap:wrap}
+.hint-chip{padding:3px 9px;border-radius:11px;border:1px solid var(--border);background:transparent;color:var(--faint);font-family:var(--font-body);font-size:10px;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.hint-chip:hover{border-color:rgba(56,189,248,0.3);color:var(--accent)}
+.notification{position:fixed;top:18px;right:18px;padding:11px 15px;border-radius:9px;background:var(--card);border:1px solid var(--border);font-size:12px;color:var(--text);z-index:1000;transform:translateX(120%);transition:transform 0.3s;max-width:280px}
+.notification.show{transform:translateX(0)}
+.notification.success{border-color:rgba(52,211,153,0.3)}
+.report-preview{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:10px;margin-bottom:8px;display:flex;align-items:center;gap:9px;font-size:11px;color:var(--muted)}
+.report-preview .rp-icon{font-size:18px}
+.report-preview .rp-name{color:var(--text);font-weight:600;font-size:12px}
+.rp-close{margin-left:auto;cursor:pointer;color:var(--faint);padding:2px 6px;font-size:15px}
+.rp-close:hover{color:var(--danger)}
+#fileInput{display:none}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px}
+</style>
+</head>
+<body>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">
+      <div class="logo-icon">⚕️</div>
+      <h1>MediAssist <em style="font-style:italic;font-size:15px;color:var(--accent)">AI</em></h1>
+    </div>
+    <p>Your personal health companion</p>
+  </div>
+  <nav class="modes">
+    <h2>Consultation Mode</h2>
+    <button class="mode-btn active" onclick="setMode('symptoms')" id="mode-symptoms">
+      <div class="mode-icon">🩺</div>
+      <div class="mode-info"><div class="mode-name">Symptom Advisor</div><div class="mode-desc">Remedies & suggestions from symptoms</div></div>
+    </button>
+    <button class="mode-btn" onclick="setMode('medications')" id="mode-medications">
+      <div class="mode-icon">💊</div>
+      <div class="mode-info"><div class="mode-name">Medication Manager</div><div class="mode-desc">Track meds, appointments & health logs</div></div>
+    </button>
+    <button class="mode-btn" onclick="setMode('mental')" id="mode-mental">
+      <div class="mode-icon">🧠</div>
+      <div class="mode-info"><div class="mode-name">Mental Health</div><div class="mode-desc">CBT exercises & mood tracking</div></div>
+    </button>
+    <button class="mode-btn" onclick="setMode('reports')" id="mode-reports">
+      <div class="mode-icon">📋</div>
+      <div class="mode-info"><div class="mode-name">Report Analysis</div><div class="mode-desc">Upload lab results for professional insights</div></div>
+    </button>
+  </nav>
+  <div class="quick-actions">
+    <h2>Quick Queries</h2>
+    <button class="quick-btn" onclick="sendQuick('I have a headache and fever since yesterday. What should I do?')">🤕 Headache & fever</button>
+    <button class="quick-btn" onclick="sendQuick('I feel very anxious and cannot sleep. Can you help?')">😟 Anxiety & sleep</button>
+    <button class="quick-btn" onclick="sendQuick('Help me track my blood pressure medication schedule')">💊 Medication reminder</button>
+    <button class="quick-btn" onclick="sendQuick('I feel very sad and unmotivated for several days')">💙 Low mood check-in</button>
+    <button class="quick-btn" onclick="setMode('reports'); sendQuick('I want to understand my blood test report')">📊 Explain lab results</button>
+  </div>
+  <div class="disclaimer">
+    <strong>⚠️ Disclaimer:</strong> This AI provides general health information only. It is not a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider.
+  </div>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-mode">
+      <div class="topbar-dot"></div>
+      <div>
+        <div class="topbar-title" id="current-mode-name">Symptom Advisor</div>
+        <div class="topbar-sub" id="current-mode-sub">Powered by Claude AI + Medical Knowledge Base</div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat-pill">Sessions: <span id="consult-count">0</span></div>
+      <div class="stat-pill">Mood: <span id="mood-display">—</span></div>
+      <div class="stat-pill">Active: <span id="session-time">0m</span></div>
+    </div>
+  </header>
+
+  <div class="chat-area" id="chatArea">
+    <div class="welcome" id="welcomeMsg">
+      <h2>Hello, I'm <em>MediAssist</em></h2>
+      <p>Your AI-powered health companion. I can help with symptoms, medications, mental wellness, and medical report analysis. Choose a mode or just start typing.</p>
+      <div class="welcome-cards">
+        <div class="welcome-card" onclick="sendQuick('I have a sore throat, runny nose and mild fever. What could this be and what should I do?')">
+          <div class="wc-icon">🤧</div>
+          <div class="wc-title">Symptom Check</div>
+          <div class="wc-desc">"I have a sore throat and fever..."</div>
+        </div>
+        <div class="welcome-card" onclick="sendQuick('I take Metformin 500mg twice daily and Lisinopril 10mg. Can you help me track these?')">
+          <div class="wc-icon">💊</div>
+          <div class="wc-title">Track Medications</div>
+          <div class="wc-desc">"Help me manage my daily meds..."</div>
+        </div>
+        <div class="welcome-card" onclick="setMode('mental'); sendQuick('I have been feeling stressed and overwhelmed. Can you guide me through a CBT exercise?')">
+          <div class="wc-icon">🧘</div>
+          <div class="wc-title">Mental Wellness</div>
+          <div class="wc-desc">"Guide me through a CBT exercise..."</div>
+        </div>
+        <div class="welcome-card" onclick="setMode('reports'); document.getElementById('uploadZone').classList.add('visible')">
+          <div class="wc-icon">📊</div>
+          <div class="wc-title">Analyze Report</div>
+          <div class="wc-desc">Upload lab results or paste values...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div id="reportPreview" style="display:none" class="report-preview">
+      <span class="rp-icon">📄</span>
+      <div><div class="rp-name" id="reportFileName">report.pdf</div><div>Ready for analysis</div></div>
+      <span class="rp-close" onclick="clearReport()">✕</span>
+    </div>
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <span style="font-size:20px">📎</span>
+      <div><strong>Upload Medical Report</strong><span> — image, PDF text or lab results file</span></div>
+    </div>
+    <input type="file" id="fileInput" accept=".txt,.jpg,.jpeg,.png" onchange="handleFile(this)"/>
+    <div class="input-row">
+      <div class="input-wrapper">
+        <div class="input-tools">
+          <button class="tool-btn" onclick="setMode('symptoms')">🩺 Symptoms</button>
+          <button class="tool-btn" onclick="setMode('medications')">💊 Meds</button>
+          <button class="tool-btn" onclick="setMode('mental')">🧠 Mental</button>
+          <button class="tool-btn" onclick="setMode('reports'); document.getElementById('uploadZone').classList.toggle('visible')">📋 Report</button>
+        </div>
+        <textarea id="msgInput" placeholder="Describe your symptoms, ask about medications, or share how you're feeling..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      </div>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+    </div>
+    <div class="input-hints" id="inputHints">
+      <button class="hint-chip" onclick="insertHint('My symptoms include ')">+ Symptoms</button>
+      <button class="hint-chip" onclick="insertHint('I take ')">+ Medications</button>
+      <button class="hint-chip" onclick="insertHint('I am feeling ')">+ Mood</button>
+      <button class="hint-chip" onclick="insertHint('My appointment is on ')">+ Appointment</button>
+      <button class="hint-chip" onclick="insertHint('My blood test shows ')">+ Lab values</button>
+    </div>
+  </div>
+</main>
+
+<aside class="health-panel">
+  <div class="hp-section">
+    <h3>Mood Tracker</h3>
+    <div class="mood-tracker-display">
+      <div>
+        <div class="mood-score" id="moodScore">—</div>
+        <div class="mood-label" id="moodLabelText">Not tracked yet</div>
+      </div>
+      <div style="text-align:right;font-size:10px;color:var(--faint)">Today<br/><span id="moodDate" style="color:var(--muted)"></span></div>
+    </div>
+    <div class="mood-history" id="moodHistoryBars">
+      <div class="mood-bar" style="height:30%"></div>
+      <div class="mood-bar" style="height:60%"></div>
+      <div class="mood-bar" style="height:40%"></div>
+      <div class="mood-bar" style="height:75%"></div>
+      <div class="mood-bar" style="height:50%"></div>
+      <div class="mood-bar" style="height:80%"></div>
+      <div class="mood-bar" style="height:0%;background:rgba(56,189,248,0.5)"></div>
+    </div>
+  </div>
+  <div class="hp-section">
+    <h3>Medications Today</h3>
+    <div class="med-list" id="medList">
+      <div class="med-item">
+        <div class="med-dot" style="background:#38bdf8"></div>
+        <div class="med-info"><div class="med-name">Vitamin D3</div><div class="med-time">9:00 AM • 1 tablet</div></div>
+        <div class="med-status due">Due</div>
+      </div>
+      <div class="med-item">
+        <div class="med-dot" style="background:#34d399"></div>
+        <div class="med-info"><div class="med-name">Omega-3</div><div class="med-time">With lunch</div></div>
+        <div class="med-status done">Done</div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="setMode('medications'); insertHint('Add medication: ')">+ Add medication</button>
+  </div>
+  <div class="hp-section">
+    <h3>Health Vitals</h3>
+    <div class="metric-grid">
+      <div class="metric-card"><div class="metric-val" id="bpVal">—</div><div class="metric-unit">mmHg</div><div class="metric-name">Blood Pressure</div></div>
+      <div class="metric-card"><div class="metric-val" id="hrVal">—</div><div class="metric-unit">bpm</div><div class="metric-name">Heart Rate</div></div>
+      <div class="metric-card"><div class="metric-val" id="bsVal">—</div><div class="metric-unit">mg/dL</div><div class="metric-name">Blood Sugar</div></div>
+      <div class="metric-card"><div class="metric-val" id="tempVal">—</div><div class="metric-unit">°F</div><div class="metric-name">Temperature</div></div>
+    </div>
+    <button class="add-btn" onclick="insertHint('My blood pressure is ')">+ Update vitals</button>
+  </div>
+  <div class="hp-section">
+    <h3>Appointments</h3>
+    <div class="appt-list" id="apptList">
+      <div class="appt-item"><div class="appt-title">General Checkup</div><div class="appt-time">Dr. Sharma • Apr 15, 10:30 AM</div></div>
+    </div>
+    <button class="add-btn" onclick="setMode('medications'); insertHint('Schedule appointment with ')">+ Add appointment</button>
+  </div>
+  <div class="hp-section">
+    <h3>Health Log</h3>
+    <div id="healthLog" style="font-size:10px;color:var(--muted);line-height:1.8">No entries yet.<br/>Start chatting to auto-log.</div>
+  </div>
+</aside>
+
+<div class="notification" id="notif"></div>
+
+<script>
+let currentMode = 'symptoms';
+let conversationHistory = [];
+let consultCount = 0;
+let sessionStart = Date.now();
+let uploadedFile = null;
+let uploadedFileText = '';
+let moodHistory = [30,60,40,75,50,80];
+let healthLog = [];
+
+const MODE_CONFIG = {
+  symptoms: {
+    name: 'Symptom Advisor',
+    sub: 'Medical remedies & suggestions based on symptoms',
+    system: `You are MediAssist AI, a knowledgeable medical advisor. Help patients understand symptoms and provide evidence-based remedies and suggestions.
+
+When answering symptom queries, structure your response with:
+**Possible Conditions:** list 2-3 likely causes
+**Home Remedies & Self-Care:** actionable steps they can take now
+**Warning Signs:** when to seek urgent care
+**Doctor Visit:** when and what type of doctor to see
+
+Use HTML formatting in your responses:
+- Wrap important warnings in: <div class="warn-box">⚠️ text here</div>
+- Wrap home remedy tips in: <div class="tip-box">💡 text here</div>
+- Use **bold** for key terms
+- Use bullet lists for multiple items
+
+You have broad medical knowledge covering: respiratory illnesses, digestive issues, headaches, skin conditions, musculoskeletal pain, infectious diseases, allergies, chronic conditions, and general first aid.
+
+Always end responses reminding users to consult a healthcare professional for diagnosis. Never diagnose definitively.`
+  },
+  medications: {
+    name: 'Medication Manager',
+    sub: 'Track medications, appointments & health logs',
+    system: `You are MediAssist AI, a medication management assistant helping patients — especially elderly patients — manage medications, appointments, and health tracking.
+
+When a user mentions medications:
+- Acknowledge the medication, dosage, and schedule
+- Note common side effects to watch for
+- Flag potential interactions if multiple meds are mentioned with: <div class="warn-box">⚠️ Interaction alert: text</div>
+- Suggest best timing (with/without food, morning vs evening)
+
+For appointments:
+- Confirm what you are logging
+- Remind about preparation if applicable (fasting, bringing records)
+
+For health logs:
+- Confirm the entry and encourage regular tracking
+- Use: <div class="info-box">📝 Logged: text</div>
+
+Always be warm, clear, and patient-friendly. Use simple language for elderly patients. Structure information in clear bullet points.`
+  },
+  mental: {
+    name: 'Mental Health Companion',
+    sub: 'CBT exercises, mood tracking & emotional support',
+    system: `You are MediAssist AI, a compassionate mental health companion trained in Cognitive Behavioral Therapy (CBT) techniques.
+
+Your capabilities:
+- Mood check-ins: Ask users to rate mood 1-10
+- CBT exercises: Thought records, cognitive restructuring, behavioral activation
+- Mindfulness: Breathing exercises, 5-4-3-2-1 grounding
+- Anxiety tools: Worry time technique, relaxation scripts
+- Sleep: Sleep hygiene tips based on CBT-I
+
+Always start by asking how they're feeling (1-10) if they haven't shared.
+
+When giving CBT exercises use: <div class="info-box">🧘 Exercise: text</div>
+For affirmations use: <div class="tip-box">💙 Remember: text</div>
+
+When a user rates their mood, include mood buttons at the end of your response like this exactly:
+<div class="mood-grid"><button class="mood-btn" onclick="logMood(SCORE, 'LABEL')">EMOJI LABEL</button></div>
+Replace SCORE with their numeric rating, LABEL with a word describing it.
+
+Crisis resources: If someone expresses suicidal thoughts or severe distress, immediately provide: iCall India: 9152987821, Vandrevala Foundation: 1860-2662-345 (24/7). Always recommend professional therapy for ongoing issues.
+
+Be warm, non-judgmental, and validating. Never diagnose mental health conditions.`
+  },
+  reports: {
+    name: 'Report Analysis',
+    sub: 'Upload lab results or medical reports for insights',
+    system: `You are MediAssist AI, a medical report analysis specialist helping patients understand their medical reports, lab results, and diagnostic findings.
+
+When analyzing reports or values:
+1. Explain what each test/value measures in plain language
+2. State the normal reference range
+3. Indicate if their value is: ✅ Normal, ⚠️ Borderline, or 🔴 Abnormal
+4. Explain what an abnormal value might suggest (with caveats)
+5. List 3-5 questions to ask their doctor
+6. Suggest lifestyle factors that may influence the values
+
+Common tests you can explain: CBC, metabolic panel (glucose, creatinine, electrolytes), lipid panel (cholesterol, LDL, HDL, triglycerides), liver function (ALT, AST, bilirubin), thyroid (TSH, T3, T4), HbA1c, vitamin levels (D, B12), uric acid, hemoglobin, and imaging report terminology.
+
+Format with clear sections and use:
+<div class="warn-box">⚠️ Important: Always have your doctor interpret these results. This analysis is educational only.</div>
+
+If no values are provided, ask the user to paste specific values or upload a text file with the report.`
+  }
+};
+
+document.getElementById('moodDate').textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'});
+setInterval(() => {
+  const mins = Math.floor((Date.now() - sessionStart) / 60000);
+  document.getElementById('session-time').textContent = mins + 'm';
+}, 30000);
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('mode-' + mode).classList.add('active');
+  document.getElementById('current-mode-name').textContent = MODE_CONFIG[mode].name;
+  document.getElementById('current-mode-sub').textContent = MODE_CONFIG[mode].sub;
+  if (mode === 'reports') {
+    document.getElementById('uploadZone').classList.add('visible');
+  }
+}
+
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  uploadedFile = file;
+  document.getElementById('reportFileName').textContent = file.name;
+  document.getElementById('reportPreview').style.display = 'flex';
+  setMode('reports');
+  const reader = new FileReader();
+  if (file.type === 'text/plain') {
+    reader.onload = e => { uploadedFileText = e.target.result; };
+    reader.readAsText(file);
+  } else if (file.type.startsWith('image/')) {
+    reader.onload = e => { uploadedFileText = '[Medical image uploaded: ' + file.name + ']'; };
+    reader.readAsDataURL(file);
+  } else {
+    uploadedFileText = '[File: ' + file.name + ', size: ' + (file.size/1024).toFixed(1) + 'KB]';
+  }
+  showNotif('📎 Report ready: ' + file.name, 'success');
+}
+
+function clearReport() {
+  uploadedFile = null;
+  uploadedFileText = '';
+  document.getElementById('reportPreview').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 140) + 'px';
+}
+
+function insertHint(text) {
+  const ta = document.getElementById('msgInput');
+  ta.value = text;
+  ta.focus();
+}
+
+function sendQuick(text) {
+  document.getElementById('msgInput').value = text;
+  sendMessage();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text && !uploadedFile) return;
+  const sendBtn = document.getElementById('sendBtn');
+  sendBtn.disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+  const welcome = document.getElementById('welcomeMsg');
+  if (welcome) welcome.remove();
+
+  let displayText = text;
+  let apiContent = text;
+  if (uploadedFile && uploadedFileText) {
+    apiContent = (text ? text + '\n\n' : '') + 'Uploaded file content:\n' + uploadedFileText;
+    displayText = (text ? text + '\n' : '') + '📎 ' + uploadedFile.name;
+  }
+
+  appendMessage('user', displayText);
+  consultCount++;
+  document.getElementById('consult-count').textContent = consultCount;
+  conversationHistory.push({ role: 'user', content: apiContent });
+  const typingId = showTyping();
+
+  try {
+    const resp = await callClaude(MODE_CONFIG[currentMode].system, conversationHistory);
+    hideTyping(typingId);
+    appendMessage('ai', resp);
+    conversationHistory.push({ role: 'assistant', content: resp });
+    autoExtractData(resp, text);
+    if (uploadedFile) clearReport();
+  } catch (err) {
+    hideTyping(typingId);
+    appendMessage('ai', '<div class="warn-box">⚠️ Error: ' + err.message + '. Please ensure this page is loaded with a valid Anthropic API key configured in the proxy, or try again.</div>');
+  }
+  sendBtn.disabled = false;
+}
+
+async function callClaude(system, messages) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system,
+      messages: messages.map(m => ({ role: m.role, content: m.content }))
+    })
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e.error?.message || 'API error ' + res.status);
+  }
+  const data = await res.json();
+  return data.content.map(c => c.text || '').join('');
+}
+
+function appendMessage(role, text) {
+  const chatArea = document.getElementById('chatArea');
+  const msg = document.createElement('div');
+  msg.className = 'message ' + role;
+  const avatarChar = role === 'ai' ? '⚕' : '👤';
+  const name = role === 'ai' ? 'MediAssist AI' : 'You';
+  const tag = role === 'ai' ? '<span class="msg-mode-tag">' + MODE_CONFIG[currentMode].name + '</span>' : '';
+  const html = role === 'ai' ? formatResponse(text) : esc(text).replace(/\n/g, '<br>');
+  msg.innerHTML = `
+    <div class="msg-avatar">${avatarChar}</div>
+    <div class="msg-body">
+      <div class="msg-meta"><span class="msg-name">${name}</span>${tag}</div>
+      <div class="msg-bubble">${html}</div>
+    </div>`;
+  chatArea.appendChild(msg);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function formatResponse(text) {
+  let h = text;
+  h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  h = h.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  h = h.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+  h = h.replace(/^[-•] (.+)$/gm, '<li>$1</li>');
+  h = h.replace(/(<li>.*?<\/li>\n?)+/gs, m => '<ul>' + m + '</ul>');
+  h = h.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  h = h.replace(/^---$/gm, '<hr>');
+  h = h.replace(/\n\n/g, '<br><br>');
+  h = h.replace(/\n(?![<\s])/g, '<br>');
+  return h;
+}
+
+function esc(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function showTyping() {
+  const chatArea = document.getElementById('chatArea');
+  const id = 'typing-' + Date.now();
+  const el = document.createElement('div');
+  el.className = 'message ai';
+  el.id = id;
+  el.innerHTML = `<div class="msg-avatar">⚕</div><div class="msg-body"><div class="msg-meta"><span class="msg-name">MediAssist AI</span></div><div class="msg-bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div></div>`;
+  chatArea.appendChild(el);
+  chatArea.scrollTop = chatArea.scrollHeight;
+  return id;
+}
+
+function hideTyping(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function autoExtractData(response, userMsg) {
+  // Mood
+  const moodM = userMsg.match(/(?:mood|feeling|feel)[^\d]*(\d+)/i);
+  if (moodM) logMood(parseInt(moodM[1]), 'from chat');
+
+  // Medications
+  const medM = (userMsg + ' ' + response).match(/(?:take|taking|prescribed)\s+([A-Za-z]+(?:\s+\d+\s*mg)?)/gi);
+  if (medM) medM.forEach(m => {
+    const name = m.replace(/^(?:take|taking|prescribed)\s+/i,'').trim();
+    if (name.length > 2) addMedication(name);
+  });
+
+  // Vitals
+  const bpM = userMsg.match(/(?:bp|blood pressure)[:\s]+(\d+\/\d+)/i);
+  if (bpM) document.getElementById('bpVal').textContent = bpM[1];
+  const hrM = userMsg.match(/(?:heart rate|pulse)[:\s]+(\d+)/i);
+  if (hrM) document.getElementById('hrVal').textContent = hrM[1];
+  const bsM = userMsg.match(/(?:blood sugar|glucose)[:\s]+(\d+)/i);
+  if (bsM) document.getElementById('bsVal').textContent = bsM[1];
+  const tpM = userMsg.match(/(?:fever|temp|temperature)[:\s]+(\d+\.?\d*)/i);
+  if (tpM) document.getElementById('tempVal').textContent = tpM[1];
+
+  // Log
+  if (userMsg) addHealthLog(userMsg.substring(0,55) + (userMsg.length > 55 ? '...' : ''));
+}
+
+function logMood(score, label) {
+  if (score < 1 || score > 10) return;
+  moodHistory.push(score);
+  if (moodHistory.length > 7) moodHistory.shift();
+  document.getElementById('moodScore').textContent = score + '/10';
+  const labels = ['','Very Low','Low','Low','Below Avg','Average','Good','Good','Great','Great','Excellent'];
+  document.getElementById('moodLabelText').textContent = labels[score] || label || 'Tracked';
+  document.getElementById('mood-display').textContent = score + '/10';
+  const bars = document.getElementById('moodHistoryBars').children;
+  moodHistory.forEach((v, i) => { if (bars[i]) bars[i].style.height = (v * 10) + '%'; });
+  addHealthLog('Mood logged: ' + score + '/10');
+  showNotif('Mood logged: ' + score + '/10 ✓', 'success');
+}
+
+function addMedication(name) {
+  const list = document.getElementById('medList');
+  if (list.children.length >= 6) return; // avoid overflow
+  const colors = ['#38bdf8','#818cf8','#34d399','#fb923c','#f87171'];
+  const color = colors[list.children.length % colors.length];
+  const item = document.createElement('div');
+  item.className = 'med-item';
+  item.innerHTML = `<div class="med-dot" style="background:${color}"></div><div class="med-info"><div class="med-name">${name}</div><div class="med-time">Added from chat</div></div><div class="med-status due">Due</div>`;
+  list.appendChild(item);
+}
+
+function addHealthLog(entry) {
+  const time = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  healthLog.unshift({ time, entry });
+  if (healthLog.length > 8) healthLog.pop();
+  const logEl = document.getElementById('healthLog');
+  logEl.innerHTML = healthLog.slice(0,5).map(l =>
+    `<div style="margin-bottom:3px"><span style="color:var(--faint)">${l.time}</span> ${l.entry}</div>`
+  ).join('');
+}
+
+function showNotif(msg, type='') {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.className = 'notification show ' + type;
+  setTimeout(() => { el.className = 'notification'; }, 3000);
+}
+</script>
+</body>
+</html>
