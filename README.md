@@ -4,6 +4,7 @@ A complete, self-contained backend for the MediAssist AI medical advisor chatbot
 One Express server serves **both** the frontend UI and the API, backed by a real
 SQLite database. No external database service, no native compilation, no Kaggle
 account needed to get running.
+https://mediassist-chatbot.onrender.com
 
 ## What's inside
 
